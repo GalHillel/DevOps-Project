@@ -1,0 +1,101 @@
+name: build-and-lint
+# This is the name of the workflow. You will see it in the Actions tab on GitHub.
+
+on:
+  push:
+    branches: [main, dev]  # Trigger workflow on push to main or dev branches
+  pull_request:
+    branches: [main, dev]  # Trigger workflow when a PR targets main or dev
+
+jobs:
+  build-and-lint:           # Define a job called "build-and-lint"
+    runs-on: ubuntu-latest  # Run the job on the latest Ubuntu VM
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+        # Checks out your repository so the workflow can access the code
+
+      - name: Setup Node
+        uses: actions/setup-node@v3
+        with:
+          node-version: 20
+        # Installs Node.js version 20 on the runner
+
+      - name: Install backend dependencies
+        working-directory: server
+        run: npm ci
+        # Installs backend dependencies from package-lock.json in a clean way
+
+      - name: Lint backend
+        working-directory: server
+        run: npm run lint -- --max-warnings=0
+        # Runs ESLint on the backend code. Fails if there are warnings or errors
+
+      - name: Install frontend dependencies
+        working-directory: client
+        run: npm ci
+        # Installs frontend dependencies in the client folder
+
+      - name: Lint frontend
+        working-directory: client
+        run: npm run lint -- --max-warnings=0
+        # Runs ESLint on the frontend code. Fails if there are warnings or errors
+
+      - name: Build backend image
+        run: docker build -t backend ./server
+        # Builds a Docker image for the backend using the server Dockerfile
+
+      - name: Build frontend image
+        run: docker build -t frontend ./client
+        # Builds a Docker image for the frontend using the client Dockerfile
+
+  deploy:
+    needs: build-and-lint         # This job runs only if build-and-lint succeeds
+    if: github.event_name == 'push'  # Only deploy on push events, not PRs
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo for deploy
+        uses: actions/checkout@v3
+        # Checks out the repo again to deploy latest code
+
+      - name: Add EC2 host to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "$EC2_HOST" >> ~/.ssh/known_hosts
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+        # Adds your EC2 host fingerprint to known_hosts to prevent SSH warnings
+
+      - name: Write SSH key
+        run: |
+          echo "${EC2_KEY}" > ec2_key.pem
+          chmod 600 ec2_key.pem
+        env:
+          EC2_KEY: ${{ secrets.EC2_KEY }}
+        # Writes the SSH private key to a file and sets correct permissions
+
+      - name: Deploy on EC2 (git pull + docker compose up -d --build)
+        env:
+          EC2_HOST: ${{ secrets.EC2_HOST }}
+          EC2_USER: ${{ secrets.EC2_USER }}
+          EC2_APP_DIR: ${{ secrets.EC2_APP_DIR }}
+        run: |
+          ssh -i ec2_key.pem ${EC2_USER}@${EC2_HOST} << 'EOF'
+            set -e
+            cd "${EC2_APP_DIR}"
+
+            git fetch --all
+            git reset --hard origin/main
+            # Forcefully update the EC2 repo to the latest main branch
+
+            docker compose up -d --build
+            # Rebuilds and restarts Docker containers in detached mode
+
+            docker image prune -f
+            # Cleans up old Docker images to save space
+
+            docker compose ps
+            # Lists running containers
+          EOF
