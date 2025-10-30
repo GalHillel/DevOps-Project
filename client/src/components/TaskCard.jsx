@@ -7,7 +7,7 @@ const TaskCard = ({ task, onDelete }) => {
   const [isDeleting, setIsDeleting] = useState(false);
 
   const handleDelete = async () => {
-    if (window.confirm("Are you sure you want to delete this task? (edited)")) {
+    if (window.confirm("Are you sure you want to delete this task?")) {
       setIsDeleting(true);
       try {
         await onDelete(task._id);
