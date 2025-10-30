@@ -1,21 +1,50 @@
 version: "3.8"
 
 services:
+  mongo:
+    image: mongo:6.0
+    container_name: mongo
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - devops-net
+
   backend:
-    build: ./server
+    build:
+      context: ./server
+      dockerfile: Dockerfile
     container_name: backend
-    restart: always
+    restart: unless-stopped
     env_file:
       - ./server/.env
+    environment:
+      - MONGO_URI=mongodb://mongo:27017/devops-db
     ports:
       - "5000:5000"
+    depends_on:
+      - mongo
+    networks:
+      - devops-net
 
   frontend:
     build:
       context: ./client
+      dockerfile: Dockerfile
+      args:
+        VITE_API_URL: http://localhost:5000/api
     container_name: frontend
-    restart: always
+    restart: unless-stopped
     ports:
       - "5173:5173"
     depends_on:
       - backend
+    networks:
+      - devops-net
+
+volumes:
+  mongo-data:
+
+networks:
+  devops-net:
+    driver: bridge
