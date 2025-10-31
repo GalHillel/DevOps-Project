@@ -10,10 +10,13 @@ pipeline {
 
         stage('Checkout') {
             steps {
-                echo 'Checking out Git repository...'
-                git branch: 'main', url: 'https://github.com/GalHillel/DevOps-Project.git'
+            echo 'Checking out Git repository...'
+            checkout([$class: 'GitSCM',
+                  branches: [[name: '*/main']],
+                  userRemoteConfigs: [[url: 'https://github.com/GalHillel/DevOps-Project.git']]])
             }
         }
+
 
         stage('Pull Images') {
             steps {
