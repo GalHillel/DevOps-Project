@@ -35,6 +35,3 @@ jobs:
           context: ./client
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/devops-project-frontend:latest
-
-      - name: Build and push mongo image (optional)
-        run: docker pull mongo:6.0
