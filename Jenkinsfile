@@ -60,15 +60,11 @@ NODE_ENV=development
         stage('Test') {
             steps {
                 echo 'Testing backend availability...'
-                // First try localhost, fallback to host.docker.internal if Jenkins is in a container
-                sh '''
-                curl -f http://localhost:5000/api || curl -f http://host.docker.internal:5000/api || echo "Backend not reachable"
-                '''
+                // שימוש בשמות קונטיינרים ברשת Docker
+                sh 'curl -f http://backend:5000/api || echo "Backend not reachable"'
 
                 echo 'Testing frontend availability...'
-                sh '''
-                curl -f http://localhost:5173 || curl -f http://host.docker.internal:5173 || echo "Frontend not reachable"
-                '''
+                sh 'curl -f http://frontend:5173 || echo "Frontend not reachable"'
             }
         }
     }
