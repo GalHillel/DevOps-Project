@@ -11,7 +11,7 @@ pipeline {
         stage('Clean Workspace') {
             steps {
                 echo 'Cleaning workspace...'
-                deleteDir() // Ensure a completely clean workspace
+                deleteDir()
             }
         }
 
@@ -38,12 +38,10 @@ pipeline {
         stage('Create .env files') {
             steps {
                 echo 'Creating .env files for server and client...'
-                // Server environment variables
                 writeFile file: 'server/.env', text: '''PORT=5000
 MONGO_URI=mongodb://mongo:27017/devops-project
 NODE_ENV=development
 '''
-                // Client environment variables
                 writeFile file: 'client/.env', text: '''VITE_API_URL=http://backend:5000/api
 '''
             }
@@ -53,7 +51,7 @@ NODE_ENV=development
             steps {
                 echo 'Stopping old containers if any...'
                 sh 'docker compose down || true'
-                
+
                 echo 'Starting containers...'
                 sh 'docker compose up -d || true'
             }
@@ -62,10 +60,15 @@ NODE_ENV=development
         stage('Test') {
             steps {
                 echo 'Testing backend availability...'
-                sh 'curl -f http://localhost:5000/api || echo "Backend not reachable"'
+                // First try localhost, fallback to host.docker.internal if Jenkins is in a container
+                sh '''
+                curl -f http://localhost:5000/api || curl -f http://host.docker.internal:5000/api || echo "Backend not reachable"
+                '''
 
                 echo 'Testing frontend availability...'
-                sh 'curl -f http://localhost:5173 || echo "Frontend not reachable"'
+                sh '''
+                curl -f http://localhost:5173 || curl -f http://host.docker.internal:5173 || echo "Frontend not reachable"
+                '''
             }
         }
     }
