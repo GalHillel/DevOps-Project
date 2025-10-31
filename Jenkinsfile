@@ -53,7 +53,10 @@ NODE_ENV=development
                 sh 'docker compose down || true'
 
                 echo 'Starting containers...'
-                sh 'docker compose up -d || true'
+                sh '''
+                docker compose up -d
+                docker compose up -d --force-recreate
+                '''
             }
         }
 
