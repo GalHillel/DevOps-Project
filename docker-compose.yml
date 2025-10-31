@@ -34,17 +34,6 @@ services:
     depends_on:
       - backend
     networks:
-      - devops-net
-
-  jenkins:
-    image: jenkins/jenkins:lts
-    container_name: jenkins-server
-    restart: unless-stopped
-    user: root
-    ports:
-      - "8080:8080"
-      - "50000:50000"
-    networks:
       - devops-net 
 
 volumes:
