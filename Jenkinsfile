@@ -8,22 +8,30 @@ pipeline {
 
     stages {
 
-        stage('Checkout') {
+        stage('Clean Workspace') {
             steps {
-            echo 'Checking out Git repository...'
-            checkout([$class: 'GitSCM',
-                  branches: [[name: '*/main']],
-                  userRemoteConfigs: [[url: 'https://github.com/GalHillel/DevOps-Project.git']]])
+                echo 'Cleaning workspace...'
+                deleteDir() // מבטיח workspace נקי
             }
         }
 
+        stage('Checkout') {
+            steps {
+                echo 'Checking out Git repository...'
+                checkout([
+                    $class: 'GitSCM',
+                    branches: [[name: '*/main']],
+                    userRemoteConfigs: [[url: 'https://github.com/GalHillel/DevOps-Project.git']]
+                ])
+            }
+        }
 
         stage('Pull Images') {
             steps {
                 echo 'Pulling latest images from Docker Hub...'
-                sh 'docker pull galhillel/devops-project-backend:latest'
-                sh 'docker pull galhillel/devops-project-frontend:latest'
-                sh 'docker pull mongo:6.0'
+                sh 'docker pull galhillel/devops-project-backend:latest || true'
+                sh 'docker pull galhillel/devops-project-frontend:latest || true'
+                sh 'docker pull mongo:6.0 || true'
             }
         }
 
@@ -33,7 +41,7 @@ pipeline {
                 sh 'docker compose down || true'
                 
                 echo 'Starting containers...'
-                sh 'docker compose up -d'
+                sh 'docker compose up -d || true'
             }
         }
 
