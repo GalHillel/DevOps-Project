@@ -11,7 +11,7 @@ pipeline {
         stage('Clean Workspace') {
             steps {
                 echo 'Cleaning workspace...'
-                deleteDir() // מבטיח workspace נקי
+                deleteDir() // Ensure a completely clean workspace
             }
         }
 
@@ -32,6 +32,20 @@ pipeline {
                 sh 'docker pull galhillel/devops-project-backend:latest || true'
                 sh 'docker pull galhillel/devops-project-frontend:latest || true'
                 sh 'docker pull mongo:6.0 || true'
+            }
+        }
+
+        stage('Create .env files') {
+            steps {
+                echo 'Creating .env files for server and client...'
+                // Server environment variables
+                writeFile file: 'server/.env', text: '''PORT=5000
+MONGO_URI=mongodb://mongo:27017/devops-project
+NODE_ENV=development
+'''
+                // Client environment variables
+                writeFile file: 'client/.env', text: '''VITE_API_URL=http://backend:5000/api
+'''
             }
         }
 
