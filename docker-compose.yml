@@ -1,19 +1,4 @@
-version: '3.8'
-
 services:
-  jenkins:
-    image: jenkins/jenkins:lts
-    container_name: jenkins
-    restart: unless-stopped
-    ports:
-      - "8080:8080"
-      - "50000:50000"
-    networks:
-      - devops-net
-    volumes:
-      - jenkins-data:/var/jenkins_home
-      - /var/run/docker.sock:/var/run/docker.sock
-
   mongo:
     image: mongo:6.0
     container_name: mongo
@@ -30,7 +15,7 @@ services:
     env_file:
       - ./server/.env
     environment:
-      - MONGO_URI=mongodb://mongo:27017/devops-project
+      - MONGO_URI=mongodb://mongo:27017/devops-db
     ports:
       - "5000:5000"
     depends_on:
@@ -53,7 +38,6 @@ services:
 
 volumes:
   mongo-data:
-  jenkins-data:
 
 networks:
   devops-net:
